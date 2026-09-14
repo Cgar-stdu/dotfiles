@@ -18,7 +18,6 @@ CONFIGS=(
   git
   gtk-3.0
   gtk-4.0
-  hypr
   jetbrains
   kitty
   lazygit
@@ -41,9 +40,23 @@ for folder in "${CONFIGS[@]}"; do
   DEST="$HOME/.config/$folder"
 
   if [ -d "$SRC" ]; then
-    if [ -L "$DEST" ] || [ -d "$DEST" ]; then
+    if [ -e "$DEST" ] || [ -L "$DEST" ]; then
       echo "⚠️ Removing existing $DEST"
-      rm -rf "$DEST"
+
+      # Try a normal removal first
+      rm -rf "$DEST" 2>/dev/null
+
+      # If it's still there, it failed (likely permissions) — retry with sudo
+      if [ -e "$DEST" ] || [ -L "$DEST" ]; then
+        echo "🔒 Normal removal failed for $DEST — retrying with sudo"
+        sudo rm -rf "$DEST"
+      fi
+    fi
+
+    # By this point DEST should be gone one way or another
+    if [ -e "$DEST" ] || [ -L "$DEST" ]; then
+      echo "🛑 Could not remove $DEST even with sudo — skipping $folder"
+      continue
     fi
 
     echo "✅ Linking $folder"
@@ -52,6 +65,10 @@ for folder in "${CONFIGS[@]}"; do
     echo "❌ Skipping $folder (not found in dotfiles)"
   fi
 done
+
+#link the hypr config
+echo "Copy pasting the hypr config folder"
+cp -r $DOTFILES/hypr $HOME/.config/
 
 # Link SSH config
 echo "🔐 Linking SSH config..."
@@ -69,7 +86,7 @@ else
 fi
 
 # Link back the theme for lazyvim with the Omarchy theme
-ln -sf ~/.config/omarchy/current/theme/neovim.lua ~/.config/nvim/lua/plugins/theme.lua
+ln -sf ~/.local/state/omarchy/current/theme/neovim.lua ~/.config/nvim/lua/plugins/theme.lua
 
 ###########################
 # btop theme linking block
@@ -119,7 +136,7 @@ fi
 {
   mkdir -p "$HOME/.config/btop/themes"
 
-  OM_BTOP_THEME="$HOME/.config/omarchy/current/theme/btop.theme"
+  OM_BTOP_THEME="$HOME/.local/state/omarchy/current/theme/btop.theme"
   if [ -f "$OM_BTOP_THEME" ]; then
     ln -snf "$OM_BTOP_THEME" "$HOME/.config/btop/themes/current.theme"
     echo "🔁 Ensured btop is linked to active Omarchy btop.theme -> ~/.config/btop/themes/current.theme"

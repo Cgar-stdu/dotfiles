@@ -1,1 +1,1 @@
-/home/cgar/.config/omarchy/current/theme/neovim.lua
+/home/cgar/.local/state/omarchy/current/theme/neovim.lua
